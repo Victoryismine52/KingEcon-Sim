@@ -1,135 +1,120 @@
 
 import streamlit as st
-import pandas as pd
-from pyvis.network import Network
-import networkx as nx
 import json
-import os
+from pyvis.network import Network
 import streamlit.components.v1 as components
 
-# Session state initialization
+# Initialize session state
+if 'node_types' not in st.session_state:
+    st.session_state['node_types'] = {}  # key: type_name, value: dict with shape, color
 if 'nodes' not in st.session_state:
-    st.session_state['nodes'] = set()
+    st.session_state['nodes'] = []  # list of (node_id, type_name)
 if 'edges' not in st.session_state:
-    st.session_state['edges'] = set()
-if 'default_loaded' not in st.session_state:
-    st.session_state['default_loaded'] = False
+    st.session_state['edges'] = []  # list of (from_node, to_node)
 
-# Load default data
-def load_default_data():
-    businesses = pd.read_csv("businesses.csv")
-    transactions = pd.read_csv("transactions.csv")
-    return businesses, transactions
+st.title("🌾 Value Chain Designer")
 
-# Populate session state with default graph
-def load_default_graph():
-    businesses, transactions = load_default_data()
-    for _, txn in transactions.iterrows():
-        if txn["role"] == "seller":
-            from_biz = txn["business"]
-            to_biz = txn["counterparty"]
-            classification = txn["classification"]
-            st.session_state['nodes'].add((from_biz, classification))
-            st.session_state['nodes'].add((to_biz, classification))
-            st.session_state['edges'].add((from_biz, to_biz, classification))
-    st.session_state['default_loaded'] = True
+# --- SECTION 1: Node Type Manager ---
+st.subheader("1️⃣ Define Node Types")
 
-# Load saved graph from file
-def load_saved_graph():
-    if os.path.exists("saved_network.json"):
-        with open("saved_network.json", "r") as f:
-            data = json.load(f)
-            st.session_state['nodes'] = set(tuple(x) for x in data.get("nodes", []))
-            st.session_state['edges'] = set(tuple(x) for x in data.get("edges", []))
-        st.success("Saved layout loaded successfully.")
-    else:
-        st.error("No saved layout found.")
+with st.form("add_node_type_form"):
+    type_name = st.text_input("Node Type Name")
+    shape = st.selectbox("Shape", ["dot", "triangle", "box", "ellipse", "star"])
+    color = st.color_picker("Color", "#00ccff")
+    submit_type = st.form_submit_button("Add / Update Node Type")
 
-# Build and display the graph
-def build_graph():
-    net = Network(height="750px", width="100%", directed=True)
-    net.barnes_hut()
+if submit_type and type_name:
+    st.session_state['node_types'][type_name] = {"shape": shape, "color": color}
+    st.success(f"Node type '{type_name}' saved.")
 
-    for name, classification in st.session_state['nodes']:
-        shape = 'dot' if classification == 'transfer' else 'triangle'
-        color = 'skyblue' if shape == 'dot' else 'lightgreen'
-        net.add_node(name, label=name, shape=shape, color=color)
+# Display current node types
+if st.session_state['node_types']:
+    st.write("### Defined Node Types:")
+    for tname, tinfo in st.session_state['node_types'].items():
+        col1, col2, col3, col4 = st.columns([3, 2, 2, 1])
+        col1.write(f"**{tname}**")
+        col2.write(f"Shape: {tinfo['shape']}")
+        col3.write(f"Color: {tinfo['color']}")
+        if col4.button("❌", key=f"delete_{tname}"):
+            del st.session_state['node_types'][tname]
+            st.experimental_rerun()
 
-    for src, dst, classification in st.session_state['edges']:
-        color = 'green' if classification == 'enhance' else 'blue'
-        net.add_edge(src, dst, title=classification, color=color)
+# --- SECTION 2: Node Placement ---
+st.subheader("2️⃣ Add Nodes to the Graph")
 
-    net.set_options('''
-    var options = {
-      "interaction": {
-        "hover": true,
-        "dragNodes": true,
-        "navigationButtons": true
-      },
-      "manipulation": {
-        "enabled": true
-      },
-      "physics": {
-        "barnesHut": {
-          "gravitationalConstant": -8000,
-          "springLength": 250
-        },
-        "minVelocity": 0.75
-      }
-    }
-    ''')
+if st.session_state['node_types']:
+    with st.form("add_node_instance"):
+        instance_id = st.text_input("Node ID")
+        selected_type = st.selectbox("Node Type", list(st.session_state['node_types'].keys()))
+        node_submit = st.form_submit_button("Add Node")
 
-    net.save_graph("graph.html")
-    HtmlFile = open("graph.html", "r", encoding="utf-8")
-    components.html(HtmlFile.read(), height=800, scrolling=True)
+    if node_submit and instance_id:
+        st.session_state['nodes'].append((instance_id, selected_type))
+        st.success(f"Node '{instance_id}' added as type '{selected_type}'.")
 
-# UI: Controls
-st.title("Interactive Economic Network Builder")
-st.write("Build or modify your value chain using the interactive graph below.")
-
-col1, col2, col3, col4 = st.columns(4)
-with col1:
-    if st.button("Load Default Layout"):
-        load_default_graph()
-with col2:
-    if st.button("Load Saved Layout"):
-        load_saved_graph()
-with col3:
-    if st.button("Clear Canvas"):
-        st.session_state['nodes'] = set()
-        st.session_state['edges'] = set()
-        st.session_state['default_loaded'] = False
-with col4:
-    if st.button("Save Layout"):
-        with open("saved_network.json", "w") as f:
-            json.dump({
-                "nodes": list(st.session_state['nodes']),
-                "edges": list(st.session_state['edges'])
-            }, f)
-        st.success("Layout saved to saved_network.json")
-
-# Add node form
-st.subheader("Add New Node")
-with st.form("add_node_form"):
-    node_name = st.text_input("Node Name")
-    classification = st.selectbox("Classification", ["enhance", "transfer"])
-    submitted = st.form_submit_button("Add Node")
-    if submitted and node_name:
-        st.session_state['nodes'].add((node_name, classification))
-        st.success(f"Node '{node_name}' added as {classification}")
-
-# Add edge form
-st.subheader("Add Edge Between Nodes")
-with st.form("add_edge_form"):
-    if st.session_state['nodes']:
-        node_list = [n[0] for n in st.session_state['nodes']]
-        source = st.selectbox("Source Node", node_list, key="src")
-        target = st.selectbox("Target Node", node_list, key="tgt")
-        edge_type = st.selectbox("Edge Type", ["enhance", "transfer"], key="edge_type")
+# --- SECTION 3: Edge Creator ---
+st.subheader("3️⃣ Define Workflow (Edges)")
+if st.session_state['nodes']:
+    node_ids = [n[0] for n in st.session_state['nodes']]
+    with st.form("add_edge_form"):
+        from_node = st.selectbox("From Node", node_ids, key="from_node")
+        to_node = st.selectbox("To Node", node_ids, key="to_node")
         edge_submit = st.form_submit_button("Add Edge")
-        if edge_submit:
-            st.session_state['edges'].add((source, target, edge_type))
-            st.success(f"Edge from '{source}' to '{target}' added as {edge_type}")
+    if edge_submit:
+        st.session_state['edges'].append((from_node, to_node))
+        st.success(f"Edge from '{from_node}' to '{to_node}' added.")
 
-# Build and show network
-build_graph()
+# --- SECTION 4: Visualize Network ---
+st.subheader("4️⃣ Value Chain Preview")
+
+def draw_network():
+    net = Network(height="600px", width="100%", directed=True)
+    net.barnes_hut()
+    for node_id, type_name in st.session_state['nodes']:
+        t = st.session_state['node_types'][type_name]
+        net.add_node(node_id, label=node_id, shape=t['shape'], color=t['color'])
+    for src, tgt in st.session_state['edges']:
+        net.add_edge(src, tgt)
+    net.set_options('''
+        var options = {
+          "interaction": {
+            "hover": true,
+            "dragNodes": true,
+            "navigationButtons": true
+          },
+          "physics": {
+            "barnesHut": {
+              "gravitationalConstant": -8000,
+              "springLength": 250
+            },
+            "minVelocity": 0.75
+          }
+        }
+    ''')
+    net.save_graph("value_chain_graph.html")
+    HtmlFile = open("value_chain_graph.html", "r", encoding="utf-8")
+    components.html(HtmlFile.read(), height=600, scrolling=True)
+
+draw_network()
+
+# --- SECTION 5: Save and Clear ---
+st.subheader("5️⃣ Export / Reset")
+
+col1, col2 = st.columns(2)
+with col1:
+    if st.button("💾 Save Value Chain"):
+        config = {
+            "node_types": st.session_state['node_types'],
+            "nodes": st.session_state['nodes'],
+            "edges": st.session_state['edges']
+        }
+        with open("value_chain_config.json", "w") as f:
+            json.dump(config, f, indent=2)
+        st.success("Value chain saved to value_chain_config.json")
+
+with col2:
+    if st.button("♻️ Clear All"):
+        st.session_state['node_types'] = {}
+        st.session_state['nodes'] = []
+        st.session_state['edges'] = []
+        st.experimental_rerun()
