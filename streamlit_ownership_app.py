@@ -4,9 +4,6 @@ import pandas as pd
 import networkx as nx
 import matplotlib.pyplot as plt
 
-# Set up matplotlib in Streamlit
-st.set_option('deprecation.showPyplotGlobalUse', False)
-
 # Load simulation data
 @st.cache_data
 def load_data():
