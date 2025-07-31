@@ -36,6 +36,7 @@ def visualize_network(businesses, transactions):
             G.add_edge(from_biz, to_biz, classification=classification)
 
     pos = nx.spring_layout(G, seed=42, k=0.7)
+    fig, ax = plt.subplots(figsize=(12, 8))
 
     unique_shapes = set(node_shapes.values())
     for shape in unique_shapes:
@@ -43,18 +44,20 @@ def visualize_network(businesses, transactions):
         nx.draw_networkx_nodes(G, pos, nodelist=nodes,
                                node_shape=shape,
                                node_color=[node_colors[n] for n in nodes],
-                               node_size=1500)
+                               node_size=1500, ax=ax)
 
-    nx.draw_networkx_labels(G, pos, font_size=9)
+    nx.draw_networkx_labels(G, pos, font_size=9, ax=ax)
 
     for classification in ['enhance', 'transfer']:
         edges = [(u, v) for u, v, d in G.edges(data=True) if d['classification'] == classification]
         nx.draw_networkx_edges(G, pos, edgelist=edges,
                                style='dotted' if classification == 'enhance' else 'solid',
                                edge_color='green' if classification == 'enhance' else 'blue',
-                               width=2)
+                               width=2, ax=ax)
 
-    st.pyplot()
+    ax.set_title("Ownership & Enhancement Flow")
+    ax.axis('off')
+    st.pyplot(fig)
 
 # Display app
 st.title("Economic Rewards Simulation - Ownership Graph")
