@@ -4,6 +4,32 @@ import json
 from pyvis.network import Network
 import streamlit.components.v1 as components
 
+
+def simulate_value_chain(config):
+    """Placeholder simulation using the saved configuration."""
+    n_per_node = 2
+    nodes = config.get("nodes", [])
+    edges = config.get("edges", [])
+
+    business_map = {}
+    output_lines = []
+
+    # Create fake businesses for each node
+    for node_id, type_name in nodes:
+        biz_names = [f"{node_id}_biz_{i}" for i in range(1, n_per_node + 1)]
+        business_map[node_id] = biz_names
+        output_lines.append(f"{node_id} ({type_name}): " + ", ".join(biz_names))
+
+    # Show sample flow through the network
+    if edges:
+        output_lines.append("\nSample value flow:")
+    for src, tgt in edges:
+        src_biz = business_map.get(src, [src])[0]
+        tgt_biz = business_map.get(tgt, [tgt])[0]
+        output_lines.append(f"{src_biz} -> {tgt_biz}")
+
+    return "\n".join(output_lines)
+
 # Initialize session state
 if 'node_types' not in st.session_state:
     st.session_state['node_types'] = {}  # key: type_name, value: dict with shape, color
@@ -134,3 +160,17 @@ with col3:
         st.session_state['nodes'] = []
         st.session_state['edges'] = []
         st.experimental_rerun()
+
+# --- SECTION 6: Run Simulation ---
+st.subheader("6️⃣ Run Simulation")
+
+if st.button("Simulate Value Chain"):
+    try:
+        with open("value_chain_config.json", "r") as f:
+            config = json.load(f)
+        sim_output = simulate_value_chain(config)
+        st.code(sim_output)
+    except FileNotFoundError:
+        st.error("value_chain_config.json not found. Save a configuration first.")
+    except json.JSONDecodeError:
+        st.error("Error reading value_chain_config.json")
