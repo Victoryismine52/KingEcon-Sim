@@ -97,10 +97,11 @@ def draw_network():
 
 draw_network()
 
-# --- SECTION 5: Save and Clear ---
-st.subheader("5️⃣ Export / Reset")
+# --- SECTION 5: Save, Load, and Reset ---
+st.subheader("5️⃣ Export / Load / Reset")
 
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
+
 with col1:
     if st.button("💾 Save Value Chain"):
         config = {
@@ -113,6 +114,21 @@ with col1:
         st.success("Value chain saved to value_chain_config.json")
 
 with col2:
+    if st.button("📂 Load Value Chain"):
+        try:
+            with open("value_chain_config.json", "r") as f:
+                config = json.load(f)
+            st.session_state['node_types'] = config.get('node_types', {})
+            st.session_state['nodes'] = [tuple(n) for n in config.get('nodes', [])]
+            st.session_state['edges'] = [tuple(e) for e in config.get('edges', [])]
+            st.success("Value chain loaded from value_chain_config.json")
+            st.experimental_rerun()
+        except FileNotFoundError:
+            st.error("value_chain_config.json not found")
+        except json.JSONDecodeError:
+            st.error("Error reading value_chain_config.json")
+
+with col3:
     if st.button("♻️ Clear All"):
         st.session_state['node_types'] = {}
         st.session_state['nodes'] = []
