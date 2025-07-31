@@ -1,0 +1,16 @@
+business_id,name,type,crop_mode,crop_value,split_to_Harvester,split_to_Mover,split_to_Storer,split_to_Consumer
+bd2a3734-3d90-4628-8efb-03fab57c3690,Planter_1,Planter,fixed,35.03,0.9,,,
+63f62be2-344e-48dc-932d-3fcf3269e906,Planter_2,Planter,percent,0.04,0.9,,,
+a19dfa55-6116-4635-86e6-13996726a803,Planter_3,Planter,fixed,96.51,0.9,,,
+0fa9074b-06c5-4b15-9088-4bd3a26ec557,Harvester_1,Harvester,fixed,90.35,,0.8,,
+d57d88ec-a12a-42d5-8b93-9cb472410d09,Harvester_2,Harvester,fixed,87.43,,0.8,,
+5f4b6e7d-d9c2-4a79-ab94-e2b84473ab71,Harvester_3,Harvester,fixed,93.44,,0.8,,
+8276530c-5995-4424-a7bd-02cf1ddf3bad,Mover_1,Mover,percent,0.09,,,0.85,
+de51eb96-a549-4543-8512-6adbddc21e51,Mover_2,Mover,fixed,31.14,,,0.85,
+f88260ab-6a07-4da9-9314-513e23958c4b,Mover_3,Mover,fixed,45.45,,,0.85,
+92964eac-a026-4a6f-b283-ab41b3b70d84,Storer_1,Storer,fixed,24.87,,,,0.95
+f93a8d13-fc09-4a9d-90ca-8b6740822b58,Storer_2,Storer,percent,0.07,,,,0.95
+7af373b8-febf-4465-aafb-5efea94fad54,Storer_3,Storer,fixed,47.83,,,,0.95
+4fa33635-4da4-4c11-b99b-92fef379403d,Consumer_1,Consumer,percent,0.09,,,,
+a5cdf478-1c5d-412d-ae7a-870bfc851179,Consumer_2,Consumer,percent,0.09,,,,
+6f8bd4f6-6f7f-4141-b0e6-4c051ecb98d4,Consumer_3,Consumer,percent,0.1,,,,
